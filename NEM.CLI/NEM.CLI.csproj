@@ -8,7 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NEM.Contracts\NEM.Contracts.csproj" />
     <ProjectReference Include="..\NEM.Model\NEM.Model.csproj" />
   </ItemGroup>
+
+    <ItemGroup>
+	    <None Update="data\**\*">
+		    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    </None>
+    </ItemGroup>
 
 </Project>

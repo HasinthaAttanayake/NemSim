@@ -10,9 +10,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
+    <PackageReference Include="MudBlazor" Version="9.7.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NEM.Contracts\NEM.Contracts.csproj" />
     <ProjectReference Include="..\NEM.Model\NEM.Model.csproj" />
   </ItemGroup>
 

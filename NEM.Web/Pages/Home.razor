@@ -1,4 +1,7 @@
 ﻿@page "/"
+@using NEM.Contracts
+@using System.Text.Json
+@inject HttpClient Http
 
 <PageTitle>Home</PageTitle>
 
@@ -16,3 +19,117 @@
 <section>
     <p>Whilst models, projections, reports and news headlines already exist in this space this work is set out as an open, rather than a black, box.</p>
 </section>
+
+<section>
+    <h2>Demand Profile</h2>
+    @if (_isLoading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_errorMessage != null)
+    {
+        <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+    }
+    else if (_series.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No data available</MudAlert>
+    }
+    else
+    {
+        <p>Showing @(_displayPointCount) of @_rawPointCount points (downsampled) | @_scenario</p>
+        <MudChart ChartType="ChartType.Line" 
+                  ChartSeries="@_series" 
+                  XAxisLabels="@_xAxisLabels"
+                  Width="100%" 
+                  Height="500px">
+        </MudChart>
+    }
+</section>
+
+@code {
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private List<ChartSeries<double>> _series = new();
+    private string[] _xAxisLabels = Array.Empty<string>();
+    private int _rawPointCount;
+    private int _displayPointCount;
+    private string _scenario = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var result = await Http.GetFromJsonAsync<ModelInputOutputDTO>("data/results.json", options);
+
+            if (result == null)
+            {
+                _errorMessage = "Failed to load results.json";
+                return;
+            }
+
+            var demandMw = result.DataSeries.DemandMw;
+            _rawPointCount = demandMw.Length;
+            _scenario = $"{result.Scenario.Region.ToUpper()} | {result.Scenario.PeriodStart:MMM yyyy}";
+
+            if (_rawPointCount == 0)
+            {
+                return;
+            }
+
+            var periodStart = result.Scenario.PeriodStart;
+            var periodEnd = result.Scenario.PeriodEnd;
+            var resolution = result.Scenario.Resolution;
+
+            // Downsample: target ~500 points from ~8600
+            var stride = Math.Max(1, _rawPointCount / 500);
+
+            var chartData = new List<double>();
+            var allTimestamps = new List<DateTimeOffset>();
+
+            for (int i = 0; i < _rawPointCount; i += stride)
+            {
+                var timestamp = periodStart.AddTicks(resolution.Ticks * i);
+                chartData.Add(demandMw[i]);
+                allTimestamps.Add(timestamp);
+            }
+
+            _displayPointCount = chartData.Count;
+
+            // Create strategic X-axis labels: show ~15-20 labels spread across the date range
+            var labelCount = Math.Min(15, _displayPointCount);
+            var labelStride = Math.Max(1, _displayPointCount / labelCount);
+            _xAxisLabels = new string[_displayPointCount];
+
+            for (int i = 0; i < _displayPointCount; i++)
+            {
+                // Only show labels at strategic points
+                if (i % labelStride == 0 || i == _displayPointCount - 1)
+                {
+                    var ts = allTimestamps[i];
+                    // Show date for first occurrence of each day, otherwise empty
+                    _xAxisLabels[i] = ts.Hour == 0 || i % labelStride == 0 
+                        ? ts.ToString("MMM dd") 
+                        : "";
+                }
+                else
+                {
+                    _xAxisLabels[i] = "";
+                }
+            }
+
+            _series = new List<ChartSeries<double>>
+            {
+                new ChartSeries<double> { Name = "Demand (MW)", Data = chartData.ToArray() }
+            };
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading data: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

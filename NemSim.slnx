@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="NEM.CLI/NEM.CLI.csproj" Id="6038508c-acff-46b7-8578-4b90cb7b132d" />
+  <Project Path="NEM.Contracts/NEM.Contracts.csproj" Id="072a96da-d7d5-43cd-9401-381803305916" />
   <Project Path="NEM.Model/NEM.Model.csproj" Id="0003c1e1-66a2-4216-b184-468f4f7e8733" />
   <Project Path="NEM.Web/NEM.Web.csproj" />
 </Solution>
