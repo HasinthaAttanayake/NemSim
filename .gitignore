@@ -273,7 +273,7 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
-
+ 
 # BeatPulse healthcheck temp database
 healthchecksdb
 
