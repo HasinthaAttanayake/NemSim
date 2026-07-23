@@ -1,0 +1,274 @@
+@page "/weather"
+@using NEM.Contracts
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>Weather traces</PageTitle>
+
+<div class="weather-page">
+    <header class="weather-header">
+        <div>
+            <p class="eyebrow">EPW resource traces</p>
+            <h1>Weather data</h1>
+            @if (_weather is not null)
+            {
+                <p class="location-line">
+                    @_weather.Location.City · WMO @_weather.Location.Wmo ·
+                    @_weather.Location.Latitude.ToString("0.0000"), @_weather.Location.Longitude.ToString("0.0000")
+                </p>
+            }
+        </div>
+
+        @if (_weather is not null)
+        {
+            <MudSelect T="int"
+                       Label="Period"
+                       Value="_selectedMonth"
+                       ValueChanged="OnMonthChanged"
+                       Variant="Variant.Outlined"
+                       Class="period-select">
+                <MudSelectItem T="int" Value="0">Full year</MudSelectItem>
+                @foreach (MonthOption month in Months)
+                {
+                    <MudSelectItem T="int" Value="month.Number">@month.Name</MudSelectItem>
+                }
+            </MudSelect>
+        }
+    </header>
+
+    @if (_isLoading)
+    {
+        <div class="status-block">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+    }
+    else if (_weather is not null)
+    {
+        <section class="metric-strip" aria-label="Selected period summary">
+            <div class="metric solar-metric">
+                <span>Peak DNI</span>
+                <strong>@_peakDni.ToString("N0")</strong>
+                <small>Wh/m²</small>
+            </div>
+            <div class="metric solar-metric">
+                <span>Mean daylight DNI</span>
+                <strong>@_meanDaylightDni.ToString("N0")</strong>
+                <small>Wh/m²</small>
+            </div>
+            <div class="metric wind-metric">
+                <span>Mean wind</span>
+                <strong>@_meanWind.ToString("N1")</strong>
+                <small>m/s at @_weather.WindMeasurementHeightMetres.ToString("N0") m</small>
+            </div>
+            <div class="metric wind-metric">
+                <span>Peak wind</span>
+                <strong>@_peakWind.ToString("N1")</strong>
+                <small>m/s</small>
+            </div>
+        </section>
+
+        <div class="trace-context">
+            <span>@_periodLabel</span>
+            <span>@_rawPointCount hourly observations</span>
+            <span>@_displayPointCount displayed</span>
+        </div>
+
+        <MudTabs Elevation="0" Class="weather-tabs">
+            <MudTabPanel Text="Direct normal radiation">
+                <section class="chart-section solar-chart">
+                    <div class="chart-heading">
+                        <div>
+                            <h2>Direct normal radiation</h2>
+                            <p>Hourly energy received normal to the sun's rays</p>
+                        </div>
+                        <span class="unit-badge">Wh/m²</span>
+                    </div>
+                    <MudChart ChartType="ChartType.Line"
+                              ChartSeries="_dniSeries"
+                              ChartLabels="_xAxisLabels"
+                              Width="100%"
+                              Height="420px" />
+                </section>
+            </MudTabPanel>
+            <MudTabPanel Text="Wind speed">
+                <section class="chart-section wind-chart">
+                    <div class="chart-heading">
+                        <div>
+                            <h2>Wind speed</h2>
+                            <p>Hourly speed at @_weather.WindMeasurementHeightMetres.ToString("N0") metres</p>
+                        </div>
+                        <span class="unit-badge">m/s</span>
+                    </div>
+                    <MudChart ChartType="ChartType.Line"
+                              ChartSeries="_windSeries"
+                              ChartLabels="_xAxisLabels"
+                              Width="100%"
+                              Height="420px" />
+                </section>
+            </MudTabPanel>
+        </MudTabs>
+    }
+</div>
+
+@code {
+    private static readonly MonthOption[] Months =
+    [
+        new(1, "January"),
+        new(2, "February"),
+        new(3, "March"),
+        new(4, "April"),
+        new(5, "May"),
+        new(6, "June"),
+        new(7, "July"),
+        new(8, "August"),
+        new(9, "September"),
+        new(10, "October"),
+        new(11, "November"),
+        new(12, "December"),
+    ];
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private WeatherDataDTO? _weather;
+    private int _selectedMonth;
+    private List<ChartSeries<double>> _dniSeries = [];
+    private List<ChartSeries<double>> _windSeries = [];
+    private string[] _xAxisLabels = [];
+    private int _rawPointCount;
+    private int _displayPointCount;
+    private double _peakDni;
+    private double _meanDaylightDni;
+    private double _meanWind;
+    private double _peakWind;
+    private string _periodLabel = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            };
+            _weather = await Http.GetFromJsonAsync<WeatherDataDTO>("data/weather-data.json", options);
+            if (_weather is null)
+            {
+                _errorMessage = "Failed to load weather-data.json";
+                return;
+            }
+
+            int dniLength = _weather.DataSeries.DirectNormalRadiationWhPerSquareMetre.Length;
+            int windLength = _weather.DataSeries.WindSpeedMetresPerSecond.Length;
+            if (dniLength == 0 || dniLength != windLength)
+            {
+                _errorMessage = "Weather traces are empty or misaligned.";
+                return;
+            }
+
+            BuildCharts();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Error loading weather data: {exception.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OnMonthChanged(int month)
+    {
+        _selectedMonth = month;
+        BuildCharts();
+    }
+
+    private void BuildCharts()
+    {
+        if (_weather is null)
+        {
+            return;
+        }
+
+        double[] dni = _weather.DataSeries.DirectNormalRadiationWhPerSquareMetre;
+        double[] wind = _weather.DataSeries.WindSpeedMetresPerSecond;
+        var selectedIndexes = new List<int>();
+
+        for (int index = 0; index < dni.Length; index++)
+        {
+            DateTimeOffset timestamp = InstantAt(index);
+            if (_selectedMonth == 0 || timestamp.Month == _selectedMonth)
+            {
+                selectedIndexes.Add(index);
+            }
+        }
+
+        _rawPointCount = selectedIndexes.Count;
+        int stride = Math.Max(1, _rawPointCount / 500);
+        var displayedIndexes = selectedIndexes.Where((_, position) => position % stride == 0).ToArray();
+        _displayPointCount = displayedIndexes.Length;
+
+        _dniSeries =
+        [
+            new ChartSeries<double>
+            {
+                Name = "DNI (Wh/m²)",
+                Data = displayedIndexes.Select(index => dni[index]).ToArray(),
+            },
+        ];
+        _windSeries =
+        [
+            new ChartSeries<double>
+            {
+                Name = "Wind speed (m/s)",
+                Data = displayedIndexes.Select(index => wind[index]).ToArray(),
+            },
+        ];
+
+        _xAxisLabels = BuildLabels(displayedIndexes);
+        double[] selectedDni = selectedIndexes.Select(index => dni[index]).ToArray();
+        double[] daylightDni = selectedDni.Where(value => value > 0).ToArray();
+        double[] selectedWind = selectedIndexes.Select(index => wind[index]).ToArray();
+        _peakDni = selectedDni.Max();
+        _meanDaylightDni = daylightDni.Length == 0 ? 0 : daylightDni.Average();
+        _meanWind = selectedWind.Average();
+        _peakWind = selectedWind.Max();
+        _periodLabel = _selectedMonth == 0
+            ? "Representative full year"
+            : Months.Single(month => month.Number == _selectedMonth).Name;
+    }
+
+    private string[] BuildLabels(IReadOnlyList<int> indexes)
+    {
+        var labels = new string[indexes.Count];
+        int labelStride = Math.Max(1, indexes.Count / 12);
+
+        for (int position = 0; position < indexes.Count; position++)
+        {
+            if (position % labelStride == 0 || position == indexes.Count - 1)
+            {
+                DateTimeOffset timestamp = InstantAt(indexes[position]);
+                labels[position] = _selectedMonth == 0
+                    ? timestamp.ToString("MMM")
+                    : timestamp.ToString("dd MMM");
+            }
+            else
+            {
+                labels[position] = string.Empty;
+            }
+        }
+
+        return labels;
+    }
+
+    private DateTimeOffset InstantAt(int index)
+    {
+        return _weather!.Start + TimeSpan.FromTicks(_weather.Resolution.Ticks * index);
+    }
+
+    private sealed record MonthOption(int Number, string Name);
+}
