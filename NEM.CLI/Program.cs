@@ -131,6 +131,7 @@ namespace NEM.CLI
         [TypeConverter(typeof(NemDateTimeOffsetConverter))]
         public DateTimeOffset SettlementDate { get; set; }
 
+        // TODO: TotalDemand is power in MW (interval average), not energy in MWh despite the name. Wrap in Power and convert via Energy.From.
         public Double TotalDemand { get; set; }
         public Double Rrp {  get; set; }
         public string PeriodType { get; set; } = string.Empty;
