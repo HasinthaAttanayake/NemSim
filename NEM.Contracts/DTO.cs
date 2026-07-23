@@ -38,6 +38,7 @@ namespace NEM.Contracts
 
     public struct Series(double[] demandMw)
     {
+        // TODO: DTO carries bare doubles (MW); keep domain value objects out of the contract so the results.json shape can version independently.
         public double[] DemandMw { get; set; } = demandMw;
     }
 
