@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="NEM.CLI.Tests/NEM.CLI.Tests.csproj" />
   <Project Path="NEM.CLI/NEM.CLI.csproj" Id="6038508c-acff-46b7-8578-4b90cb7b132d" />
   <Project Path="NEM.Contracts/NEM.Contracts.csproj" Id="072a96da-d7d5-43cd-9401-381803305916" />
   <Project Path="NEM.Model.Tests/NEM.Model.Tests.csproj" Id="d4c06f12-2c71-467b-ba1d-17f825d4cfc7" />

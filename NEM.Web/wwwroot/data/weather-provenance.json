@@ -1,0 +1,39 @@
+{
+  "rowCount": 8760,
+  "daylightDniSourceShares": {
+    "Measured": 0,
+    "Derived": 0,
+    "Modelled": 0,
+    "Unknown": 100
+  },
+  "daylightDniUncertaintyHistogram": {
+    "35-50%": 4566
+  },
+  "wind": {
+    "shareBySourceCode": {
+      "A": 0,
+      "B": 0,
+      "C": 0,
+      "E": 0,
+      "F": 0,
+      "?": 91.78082191780823,
+      "Unknown": 8.219178082191782
+    },
+    "longestConsecutiveNonARun": {
+      "length": 8760,
+      "startTimestamp": "2001-01-01T00:00:00+10:00"
+    }
+  },
+  "leapYearObserved": false,
+  "sourceYears": [
+    2011,
+    2013,
+    2015,
+    2016,
+    2017,
+    2020,
+    2021,
+    2025
+  ],
+  "flagsUnavailable": 720
+}
