@@ -15,7 +15,7 @@ internal static class EpwWeatherExport
                 "Weather export requires a wind-speed trace with a measurement height.");
 
         return new WeatherDataDTO(
-            1,
+            2,
             sourceFile,
             new WeatherLocation(
                 header.City,
@@ -26,7 +26,10 @@ internal static class EpwWeatherExport
             weather.DirectNormalRadiation.Resolution,
             windMeasurementHeightMetres,
             new WeatherSeriesData(
+                ValuesOf(weather.GlobalHorizontalRadiation),
                 ValuesOf(weather.DirectNormalRadiation),
+                ValuesOf(weather.DiffuseHorizontalRadiation),
+                ZenithValuesOf(weather.SolarZenith),
                 ValuesOf(weather.WindSpeed)));
     }
 
@@ -52,6 +55,17 @@ internal static class EpwWeatherExport
         for (int index = 0; index < series.Length; index++)
         {
             values[index] = series[index];
+        }
+
+        return values;
+    }
+
+    private static double[] ZenithValuesOf(NEM.Model.Series.SolarZenithSeries series)
+    {
+        var values = new double[series.Length];
+        for (int index = 0; index < series.Length; index++)
+        {
+            values[index] = series[index].Degrees;
         }
 
         return values;

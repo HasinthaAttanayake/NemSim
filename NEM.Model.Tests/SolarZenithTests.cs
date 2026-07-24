@@ -27,9 +27,9 @@ namespace NemSim.Tests
             var time = new DateTimeOffset(
                 year, month, day, hour, minute, second,
                 TimeSpan.FromHours(utcOffsetHours));
-            var solarZenith = SolarZenith.FromLocationAndDateTime(latitude, longitude, time);
+            SolarZenith solarZenith = SolarZenith.At(latitude, longitude, time);
 
-            double angle = solarZenith.SolarZenithAngle();
+            double angle = solarZenith.Degrees;
 
             angle.Should().BeApproximately(expectedAngle, AngleTolerance);
         }
@@ -41,9 +41,9 @@ namespace NemSim.Tests
             // Its displayed cos(zenith) is 0.881, which is acos(0.881) = 28.2368 degrees.
             // It uses a different model than NOAA's published fractional-year equations.
             var time = new DateTimeOffset(2024, 4, 20, 12, 0, 0, TimeSpan.FromHours(-7));
-            var solarZenith = SolarZenith.FromLocationAndDateTime(40.125, -105.23694444444445, time);
+            SolarZenith solarZenith = SolarZenith.At(40.125, -105.23694444444445, time);
 
-            double angle = solarZenith.SolarZenithAngle();
+            double angle = solarZenith.Degrees;
 
             angle.Should().BeApproximately(28.2367709171764, OnlineCalculatorAngleTolerance);
         }
@@ -52,9 +52,9 @@ namespace NemSim.Tests
         public void SolarZenithAngle_ShouldUse366Days_DuringLeapYear()
         {
             var time = new DateTimeOffset(2024, 2, 29, 12, 0, 0, TimeSpan.Zero);
-            var solarZenith = SolarZenith.FromLocationAndDateTime(0, 0, time);
+            SolarZenith solarZenith = SolarZenith.At(0, 0, time);
 
-            double angle = solarZenith.SolarZenithAngle();
+            double angle = solarZenith.Degrees;
 
             angle.Should().BeApproximately(8.569363051881247, AngleTolerance);
         }
@@ -62,17 +62,15 @@ namespace NemSim.Tests
         [Theory]
         [InlineData(-90, -180)]
         [InlineData(90, 180)]
-        public void FromLocationAndDateTime_ShouldAcceptCoordinateBoundaries(
+        public void At_ShouldAcceptCoordinateBoundaries(
             double latitude,
             double longitude)
         {
             var time = new DateTimeOffset(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
-            var solarZenith = SolarZenith.FromLocationAndDateTime(latitude, longitude, time);
+            SolarZenith solarZenith = SolarZenith.At(latitude, longitude, time);
 
-            solarZenith.Latitude.Should().Be(latitude);
-            solarZenith.Longitude.Should().Be(longitude);
-            solarZenith.SolarZenithAngle().Should().BeInRange(0, 180);
+            solarZenith.Degrees.Should().BeInRange(0, 180);
         }
 
         [Theory]
@@ -81,11 +79,11 @@ namespace NemSim.Tests
         [InlineData(double.NegativeInfinity)]
         [InlineData(-90.0001)]
         [InlineData(90.0001)]
-        public void FromLocationAndDateTime_ShouldRejectInvalidLatitude(double latitude)
+        public void At_ShouldRejectInvalidLatitude(double latitude)
         {
             var time = new DateTimeOffset(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
-            var act = () => SolarZenith.FromLocationAndDateTime(latitude, 0, time);
+            var act = () => SolarZenith.At(latitude, 0, time);
 
             act.Should().Throw<ArgumentOutOfRangeException>()
                 .Which.ParamName.Should().Be("latitude");
@@ -97,14 +95,28 @@ namespace NemSim.Tests
         [InlineData(double.NegativeInfinity)]
         [InlineData(-180.0001)]
         [InlineData(180.0001)]
-        public void FromLocationAndDateTime_ShouldRejectInvalidLongitude(double longitude)
+        public void At_ShouldRejectInvalidLongitude(double longitude)
         {
             var time = new DateTimeOffset(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
-            var act = () => SolarZenith.FromLocationAndDateTime(0, longitude, time);
+            var act = () => SolarZenith.At(0, longitude, time);
 
             act.Should().Throw<ArgumentOutOfRangeException>()
                 .Which.ParamName.Should().Be("longitude");
+        }
+
+        [Theory]
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        [InlineData(double.NegativeInfinity)]
+        [InlineData(-0.0001)]
+        [InlineData(180.0001)]
+        public void FromDegrees_ShouldRejectInvalidAngle(double degrees)
+        {
+            var act = () => SolarZenith.FromDegrees(degrees);
+
+            act.Should().Throw<ArgumentOutOfRangeException>()
+                .Which.ParamName.Should().Be("degrees");
         }
     }
 }

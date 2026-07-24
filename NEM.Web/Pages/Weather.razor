@@ -78,6 +78,22 @@
         </div>
 
         <MudTabs Elevation="0" Class="weather-tabs">
+            <MudTabPanel Text="Global horizontal radiation">
+                <section class="chart-section solar-chart">
+                    <div class="chart-heading">
+                        <div>
+                            <h2>Global horizontal radiation</h2>
+                            <p>Total hourly solar energy received by a horizontal surface</p>
+                        </div>
+                        <span class="unit-badge">Wh/m²</span>
+                    </div>
+                    <MudChart ChartType="ChartType.Line"
+                              ChartSeries="_ghiSeries"
+                              ChartLabels="_xAxisLabels"
+                              Width="100%"
+                              Height="420px" />
+                </section>
+            </MudTabPanel>
             <MudTabPanel Text="Direct normal radiation">
                 <section class="chart-section solar-chart">
                     <div class="chart-heading">
@@ -89,6 +105,22 @@
                     </div>
                     <MudChart ChartType="ChartType.Line"
                               ChartSeries="_dniSeries"
+                              ChartLabels="_xAxisLabels"
+                              Width="100%"
+                              Height="420px" />
+                </section>
+            </MudTabPanel>
+            <MudTabPanel Text="Diffuse horizontal radiation">
+                <section class="chart-section solar-chart">
+                    <div class="chart-heading">
+                        <div>
+                            <h2>Diffuse horizontal radiation</h2>
+                            <p>Hourly sky radiation received by a horizontal surface</p>
+                        </div>
+                        <span class="unit-badge">Wh/m²</span>
+                    </div>
+                    <MudChart ChartType="ChartType.Line"
+                              ChartSeries="_dhiSeries"
                               ChartLabels="_xAxisLabels"
                               Width="100%"
                               Height="420px" />
@@ -135,7 +167,9 @@
     private string? _errorMessage;
     private WeatherDataDTO? _weather;
     private int _selectedMonth;
+    private List<ChartSeries<double>> _ghiSeries = [];
     private List<ChartSeries<double>> _dniSeries = [];
+    private List<ChartSeries<double>> _dhiSeries = [];
     private List<ChartSeries<double>> _windSeries = [];
     private string[] _xAxisLabels = [];
     private int _rawPointCount;
@@ -162,8 +196,15 @@
             }
 
             int dniLength = _weather.DataSeries.DirectNormalRadiationWhPerSquareMetre.Length;
+            int ghiLength = _weather.DataSeries.GlobalHorizontalRadiationWhPerSquareMetre.Length;
+            int dhiLength = _weather.DataSeries.DiffuseHorizontalRadiationWhPerSquareMetre.Length;
+            int zenithLength = _weather.DataSeries.SolarZenithDegrees.Length;
             int windLength = _weather.DataSeries.WindSpeedMetresPerSecond.Length;
-            if (dniLength == 0 || dniLength != windLength)
+            if (dniLength == 0
+                || ghiLength != dniLength
+                || dhiLength != dniLength
+                || zenithLength != dniLength
+                || windLength != dniLength)
             {
                 _errorMessage = "Weather traces are empty or misaligned.";
                 return;
@@ -194,7 +235,9 @@
             return;
         }
 
+        double[] ghi = _weather.DataSeries.GlobalHorizontalRadiationWhPerSquareMetre;
         double[] dni = _weather.DataSeries.DirectNormalRadiationWhPerSquareMetre;
+        double[] dhi = _weather.DataSeries.DiffuseHorizontalRadiationWhPerSquareMetre;
         double[] wind = _weather.DataSeries.WindSpeedMetresPerSecond;
         var selectedIndexes = new List<int>();
 
@@ -212,12 +255,28 @@
         var displayedIndexes = selectedIndexes.Where((_, position) => position % stride == 0).ToArray();
         _displayPointCount = displayedIndexes.Length;
 
+        _ghiSeries =
+        [
+            new ChartSeries<double>
+            {
+                Name = "GHI (Wh/m²)",
+                Data = displayedIndexes.Select(index => ghi[index]).ToArray(),
+            },
+        ];
         _dniSeries =
         [
             new ChartSeries<double>
             {
                 Name = "DNI (Wh/m²)",
                 Data = displayedIndexes.Select(index => dni[index]).ToArray(),
+            },
+        ];
+        _dhiSeries =
+        [
+            new ChartSeries<double>
+            {
+                Name = "DHI (Wh/m²)",
+                Data = displayedIndexes.Select(index => dhi[index]).ToArray(),
             },
         ];
         _windSeries =

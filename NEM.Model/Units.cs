@@ -246,23 +246,35 @@ namespace NEM.Model.Units
     }
 
     /// <summary>
-    /// Solar position inputs for calculating the geometric solar zenith angle
-    /// using NOAA's General Solar Position Calculations equations.
+    /// Geometric solar zenith angle in degrees. Zero degrees is directly overhead
+    /// and 90 degrees is the astronomical horizon.
     /// </summary>
-    public readonly struct SolarZenith
+    public readonly record struct SolarZenith : IComparable<SolarZenith>
     {
-        public double Latitude { get; }
-        public double Longitude { get; }
-        public DateTimeOffset TimeOfDay { get; }
+        public double Degrees { get; }
 
-        private SolarZenith(double latitude, double longitude, DateTimeOffset timeOfDay)
+        private SolarZenith(double degrees)
         {
-            Latitude = latitude;
-            Longitude = longitude;
-            TimeOfDay = timeOfDay;
+            Degrees = degrees;
         }
 
-        public static SolarZenith FromLocationAndDateTime(double latitude, double longitude, DateTimeOffset timeOfDay)
+        public static SolarZenith FromDegrees(double degrees)
+        {
+            if (!double.IsFinite(degrees) || degrees is < 0 or > 180)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(degrees), degrees,
+                    "Solar zenith must be a finite value between 0 and 180 degrees.");
+            }
+
+            return new SolarZenith(degrees);
+        }
+
+        /// <summary>
+        /// Calculates the geometric solar zenith angle for a location and instant
+        /// using NOAA's General Solar Position Calculations equations.
+        /// </summary>
+        public static SolarZenith At(double latitude, double longitude, DateTimeOffset timeOfDay)
         {
             if (!double.IsFinite(latitude) || latitude < -90 || latitude > 90)
             {
@@ -278,22 +290,13 @@ namespace NEM.Model.Units
                     "Longitude must be a finite value between -180 and +180 degrees.");
             }
 
-            return new SolarZenith(latitude, longitude, timeOfDay);
-        }
-
-        /// <summary>
-        /// Calculates the geometric solar zenith angle in degrees. Zero degrees
-        /// is directly overhead and 90 degrees is the astronomical horizon.
-        /// </summary>
-        public double SolarZenithAngle()
-        {
-            int daysInYear = DateTime.IsLeapYear(TimeOfDay.Year) ? 366 : 365;
-            double fractionalHour = TimeOfDay.Hour
-                + TimeOfDay.Minute / 60.0
-                + TimeOfDay.Second / 3600.0
-                + TimeOfDay.Millisecond / 3_600_000.0;
+            int daysInYear = DateTime.IsLeapYear(timeOfDay.Year) ? 366 : 365;
+            double fractionalHour = timeOfDay.Hour
+                + timeOfDay.Minute / 60.0
+                + timeOfDay.Second / 3600.0
+                + timeOfDay.Millisecond / 3_600_000.0;
             double fractionalYear = 2 * Math.PI / daysInYear
-                * (TimeOfDay.DayOfYear - 1 + (fractionalHour - 12) / 24);
+                * (timeOfDay.DayOfYear - 1 + (fractionalHour - 12) / 24);
 
             double equationOfTime = 229.18 * (
                 0.000075
@@ -311,17 +314,19 @@ namespace NEM.Model.Units
                 + 0.00148 * Math.Sin(3 * fractionalYear);
 
             double timeOffset = equationOfTime
-                + 4 * Longitude
-                - 60 * TimeOfDay.Offset.TotalHours;
+                + 4 * longitude
+                - 60 * timeOfDay.Offset.TotalHours;
             double trueSolarTime = fractionalHour * 60 + timeOffset;
             double hourAngle = DegreesToRadians(trueSolarTime / 4 - 180);
-            double latitude = DegreesToRadians(Latitude);
+            double latitudeRadians = DegreesToRadians(latitude);
 
-            double cosineZenith = Math.Sin(latitude) * Math.Sin(declination)
-                + Math.Cos(latitude) * Math.Cos(declination) * Math.Cos(hourAngle);
+            double cosineZenith = Math.Sin(latitudeRadians) * Math.Sin(declination)
+                + Math.Cos(latitudeRadians) * Math.Cos(declination) * Math.Cos(hourAngle);
 
-            return RadiansToDegrees(Math.Acos(Math.Clamp(cosineZenith, -1, 1)));
+            return FromDegrees(RadiansToDegrees(Math.Acos(Math.Clamp(cosineZenith, -1, 1))));
         }
+
+        public int CompareTo(SolarZenith other) => Degrees.CompareTo(other.Degrees);
 
         private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;
         private static double RadiansToDegrees(double radians) => radians * 180 / Math.PI;

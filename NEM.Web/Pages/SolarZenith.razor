@@ -1,0 +1,164 @@
+@page "/solar-zenith"
+@using NEM.Contracts
+@using NEM.Model.Units
+@using System.Globalization
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>Solar zenith</PageTitle>
+
+<div class="zenith-page">
+    <header class="zenith-header">
+        <div>
+            <p class="eyebrow">Solar geometry</p>
+            <h1>Solar zenith</h1>
+            @if (_weather is not null)
+            {
+                <p class="location-line">
+                    @_weather.Location.City ·
+                    @_weather.Location.Latitude.ToString("0.0000"), @_weather.Location.Longitude.ToString("0.0000")
+                </p>
+            }
+        </div>
+
+        <label class="date-field">
+            <span>Date</span>
+            <input type="date"
+                   value="@_selectedDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                   @onchange="OnDateChanged" />
+        </label>
+    </header>
+
+    @if (_isLoading)
+    {
+        <div class="status-block">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+    }
+    else if (_weather is not null)
+    {
+        <section class="zenith-summary" aria-label="Selected day summary">
+            <div>
+                <span>Minimum zenith sample</span>
+                <strong>@_minimumZenith.ToString("N1")°</strong>
+            </div>
+            <div>
+                <span>Interval midpoint</span>
+                <strong>@_minimumTime</strong>
+            </div>
+            <div>
+                <span>Day</span>
+                <strong>@_selectedDate.ToString("dd MMM yyyy")</strong>
+            </div>
+        </section>
+
+        <section class="chart-section">
+            <div class="chart-heading">
+                <div>
+                    <h2>Hourly geometric zenith angle</h2>
+                    <p>0° is directly overhead; 90° is the astronomical horizon</p>
+                </div>
+                <span class="unit-badge">degrees</span>
+            </div>
+            <MudChart ChartType="ChartType.Line"
+                      ChartSeries="_zenithSeries"
+                      ChartLabels="HourLabels"
+                      Width="100%"
+                      Height="460px" />
+        </section>
+    }
+</div>
+
+@code {
+    private static readonly string[] HourLabels =
+        Enumerable.Range(0, 24).Select(hour => $"{hour:D2}:30").ToArray();
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private WeatherDataDTO? _weather;
+    private DateTime _selectedDate = DateTime.Today;
+    private List<ChartSeries<double>> _zenithSeries = [];
+    private double _minimumZenith;
+    private string _minimumTime = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            _weather = await Http.GetFromJsonAsync<WeatherDataDTO>("data/weather-data.json", options);
+            if (_weather is null)
+            {
+                _errorMessage = "Failed to load weather-data.json";
+                return;
+            }
+
+            BuildChart();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Error loading weather data: {exception.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OnDateChanged(ChangeEventArgs args)
+    {
+        if (DateTime.TryParseExact(
+            args.Value?.ToString(),
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out DateTime selectedDate))
+        {
+            _selectedDate = selectedDate;
+            BuildChart();
+        }
+    }
+
+    private void BuildChart()
+    {
+        if (_weather is null)
+        {
+            return;
+        }
+
+        var start = new DateTimeOffset(
+            _selectedDate.Year,
+            _selectedDate.Month,
+            _selectedDate.Day,
+            0,
+            0,
+            0,
+            _weather.Start.Offset);
+        NEM.Model.Series.SolarZenithSeries series =
+            NEM.Model.Series.SolarZenithSeries.Calculate(
+                start,
+                TimeSpan.FromHours(1),
+                24,
+                _weather.Location.Latitude,
+                _weather.Location.Longitude);
+        double[] values = Enumerable.Range(0, series.Length)
+            .Select(index => series[index].Degrees)
+            .ToArray();
+
+        int minimumIndex = Array.IndexOf(values, values.Min());
+        _minimumZenith = values[minimumIndex];
+        _minimumTime = HourLabels[minimumIndex];
+        _zenithSeries =
+        [
+            new ChartSeries<double>
+            {
+                Name = "Solar zenith (degrees)",
+                Data = values,
+            },
+        ];
+    }
+}

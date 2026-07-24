@@ -25,6 +25,7 @@ internal sealed class EpwFixture
         double globalHorizontalRadiation = 0,
         double directNormalRadiation = 0,
         double windSpeed = 5,
+        double diffuseHorizontalRadiation = 0,
         string flags = "?9?9?9?9E0?9?9?9?9?9?9?9?9?9?9?9*9?9*9*9?9*9")
     {
         var columns = Enumerable.Repeat("0", 22).ToArray();
@@ -35,6 +36,7 @@ internal sealed class EpwFixture
         columns[5] = flags;
         columns[13] = globalHorizontalRadiation.ToString(CultureInfo.InvariantCulture);
         columns[14] = directNormalRadiation.ToString(CultureInfo.InvariantCulture);
+        columns[15] = diffuseHorizontalRadiation.ToString(CultureInfo.InvariantCulture);
         columns[21] = windSpeed.ToString(CultureInfo.InvariantCulture);
         _rows.Add(string.Join(',', columns));
         return this;

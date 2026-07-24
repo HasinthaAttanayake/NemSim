@@ -40,5 +40,31 @@ namespace NemSim.Tests
             trace.MeasurementHeightMetres.Should().BeNull();
             trace[2].Should().Be(800);
         }
+
+        [Theory]
+        [MemberData(nameof(NonWindTraceCases))]
+        public void NonWindTrace_CarriesDistinctUnitAndNoHeight(
+            TraceSeries trace,
+            TraceUnit expectedUnit,
+            double expectedValue)
+        {
+            trace.Unit.Should().Be(expectedUnit);
+            trace.MeasurementHeightMetres.Should().BeNull();
+            trace[1].Should().Be(expectedValue);
+        }
+
+        public static TheoryData<TraceSeries, TraceUnit, double> NonWindTraceCases => new()
+        {
+            {
+                TraceSeries.GlobalHorizontalRadiation(NemStart, Hour, [0, 650]),
+                TraceUnit.GlobalHorizontalRadiationWattHoursPerSquareMetre,
+                650
+            },
+            {
+                TraceSeries.DiffuseHorizontalRadiation(NemStart, Hour, [0, 125]),
+                TraceUnit.DiffuseHorizontalRadiationWattHoursPerSquareMetre,
+                125
+            },
+        };
     }
 }

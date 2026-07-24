@@ -55,5 +55,8 @@ public readonly record struct WeatherLocation(
     double Longitude);
 
 public readonly record struct WeatherSeriesData(
+    double[] GlobalHorizontalRadiationWhPerSquareMetre,
     double[] DirectNormalRadiationWhPerSquareMetre,
+    double[] DiffuseHorizontalRadiationWhPerSquareMetre,
+    double[] SolarZenithDegrees,
     double[] WindSpeedMetresPerSecond);

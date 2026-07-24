@@ -18,6 +18,13 @@ namespace NEM.Model.Series
         /// one to a curve expecting another is dimensionally valid and wrong.
         /// </summary>
         DirectNormalRadiationWattHoursPerSquareMetre,
+
+        /// <summary>Global Horizontal Radiation in watt-hours per square metre (Wh/m²).</summary>
+        GlobalHorizontalRadiationWattHoursPerSquareMetre,
+
+        /// <summary>Diffuse Horizontal Radiation in watt-hours per square metre (Wh/m²).</summary>
+        DiffuseHorizontalRadiationWattHoursPerSquareMetre,
+
     }
 
     /// <summary>
@@ -97,5 +104,24 @@ namespace NEM.Model.Series
             return new TraceSeries(
                 start, resolution, wattHoursPerSquareMetre, TraceUnit.DirectNormalRadiationWattHoursPerSquareMetre, null);
         }
+
+        public static TraceSeries GlobalHorizontalRadiation(
+            DateTimeOffset start,
+            TimeSpan resolution,
+            double[] wattHoursPerSquareMetre)
+        {
+            return new TraceSeries(
+                start, resolution, wattHoursPerSquareMetre, TraceUnit.GlobalHorizontalRadiationWattHoursPerSquareMetre, null);
+        }
+
+        public static TraceSeries DiffuseHorizontalRadiation(
+            DateTimeOffset start,
+            TimeSpan resolution,
+            double[] wattHoursPerSquareMetre)
+        {
+            return new TraceSeries(
+                start, resolution, wattHoursPerSquareMetre, TraceUnit.DiffuseHorizontalRadiationWattHoursPerSquareMetre, null);
+        }
+
     }
 }

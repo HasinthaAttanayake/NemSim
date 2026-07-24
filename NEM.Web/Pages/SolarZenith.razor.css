@@ -1,0 +1,156 @@
+.zenith-page {
+    --solar: #c85d16;
+    --solar-soft: #fff4e8;
+    --ink: #17212b;
+    --muted: #5d6873;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+    color: var(--ink);
+}
+
+.zenith-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #dce1e5;
+}
+
+.eyebrow {
+    margin: 0 0 0.35rem;
+    color: var(--solar);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.zenith-header h1 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.location-line,
+.chart-heading p {
+    margin: 0.4rem 0 0;
+    color: var(--muted);
+}
+
+.date-field {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.date-field input {
+    min-width: 190px;
+    padding: 0.75rem;
+    border: 1px solid #aeb7bf;
+    border-radius: 4px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+}
+
+.status-block {
+    display: grid;
+    min-height: 420px;
+    place-items: center;
+}
+
+.zenith-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1.5rem;
+    border-top: 1px solid #dce1e5;
+    border-bottom: 1px solid #dce1e5;
+}
+
+.zenith-summary div {
+    padding: 1rem 1.15rem;
+    border-right: 1px solid #dce1e5;
+}
+
+.zenith-summary div:last-child {
+    border-right: 0;
+}
+
+.zenith-summary span,
+.zenith-summary strong {
+    display: block;
+}
+
+.zenith-summary span {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.zenith-summary strong {
+    margin-top: 0.2rem;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.chart-section {
+    padding-top: 1.75rem;
+}
+
+.chart-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.chart-heading h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.unit-badge {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--solar);
+    border-radius: 4px;
+    background: var(--solar-soft);
+    color: var(--solar);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+@media (max-width: 700px) {
+    .zenith-page {
+        padding: 1rem 0.85rem 2rem;
+    }
+
+    .zenith-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .date-field input {
+        width: 100%;
+    }
+
+    .zenith-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .zenith-summary div {
+        border-right: 0;
+        border-bottom: 1px solid #dce1e5;
+    }
+
+    .zenith-summary div:last-child {
+        border-bottom: 0;
+    }
+}
