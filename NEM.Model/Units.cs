@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Runtime.CompilerServices;
+
 namespace NEM.Model.Units
 {
     /// <summary>
@@ -240,5 +243,87 @@ namespace NEM.Model.Units
 
             return total;
         }
+    }
+
+    /// <summary>
+    /// Solar position inputs for calculating the geometric solar zenith angle
+    /// using NOAA's General Solar Position Calculations equations.
+    /// </summary>
+    public readonly struct SolarZenith
+    {
+        public double Latitude { get; }
+        public double Longitude { get; }
+        public DateTimeOffset TimeOfDay { get; }
+
+        private SolarZenith(double latitude, double longitude, DateTimeOffset timeOfDay)
+        {
+            Latitude = latitude;
+            Longitude = longitude;
+            TimeOfDay = timeOfDay;
+        }
+
+        public static SolarZenith FromLocationAndDateTime(double latitude, double longitude, DateTimeOffset timeOfDay)
+        {
+            if (!double.IsFinite(latitude) || latitude < -90 || latitude > 90)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(latitude), latitude,
+                    "Latitude must be a finite value between -90 and +90 degrees.");
+            }
+
+            if (!double.IsFinite(longitude) || longitude < -180 || longitude > 180)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(longitude), longitude,
+                    "Longitude must be a finite value between -180 and +180 degrees.");
+            }
+
+            return new SolarZenith(latitude, longitude, timeOfDay);
+        }
+
+        /// <summary>
+        /// Calculates the geometric solar zenith angle in degrees. Zero degrees
+        /// is directly overhead and 90 degrees is the astronomical horizon.
+        /// </summary>
+        public double SolarZenithAngle()
+        {
+            int daysInYear = DateTime.IsLeapYear(TimeOfDay.Year) ? 366 : 365;
+            double fractionalHour = TimeOfDay.Hour
+                + TimeOfDay.Minute / 60.0
+                + TimeOfDay.Second / 3600.0
+                + TimeOfDay.Millisecond / 3_600_000.0;
+            double fractionalYear = 2 * Math.PI / daysInYear
+                * (TimeOfDay.DayOfYear - 1 + (fractionalHour - 12) / 24);
+
+            double equationOfTime = 229.18 * (
+                0.000075
+                + 0.001868 * Math.Cos(fractionalYear)
+                - 0.032077 * Math.Sin(fractionalYear)
+                - 0.014615 * Math.Cos(2 * fractionalYear)
+                - 0.040849 * Math.Sin(2 * fractionalYear));
+
+            double declination = 0.006918
+                - 0.399912 * Math.Cos(fractionalYear)
+                + 0.070257 * Math.Sin(fractionalYear)
+                - 0.006758 * Math.Cos(2 * fractionalYear)
+                + 0.000907 * Math.Sin(2 * fractionalYear)
+                - 0.002697 * Math.Cos(3 * fractionalYear)
+                + 0.00148 * Math.Sin(3 * fractionalYear);
+
+            double timeOffset = equationOfTime
+                + 4 * Longitude
+                - 60 * TimeOfDay.Offset.TotalHours;
+            double trueSolarTime = fractionalHour * 60 + timeOffset;
+            double hourAngle = DegreesToRadians(trueSolarTime / 4 - 180);
+            double latitude = DegreesToRadians(Latitude);
+
+            double cosineZenith = Math.Sin(latitude) * Math.Sin(declination)
+                + Math.Cos(latitude) * Math.Cos(declination) * Math.Cos(hourAngle);
+
+            return RadiansToDegrees(Math.Acos(Math.Clamp(cosineZenith, -1, 1)));
+        }
+
+        private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;
+        private static double RadiansToDegrees(double radians) => radians * 180 / Math.PI;
     }
 }
