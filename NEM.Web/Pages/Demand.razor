@@ -145,16 +145,7 @@
                 return;
             }
 
-            if (!IsLegacyFallback(overviewResult.State))
-            {
-                _loadState = overviewResult.State;
-                return;
-            }
-
-            _regionOptions = [];
-            _demandPathsByRegion.Clear();
-            _selectedRegion = string.Empty;
-            await LoadDemandAsync("data/demand-data.json", expectedRegion: null);
+            _loadState = overviewResult.State;
         }
         catch (Exception exception)
         {
@@ -175,7 +166,7 @@
         await LoadDemandAsync(demandPath, region);
     }
 
-    private async Task LoadDemandAsync(string path, string? expectedRegion)
+    private async Task LoadDemandAsync(string path, string expectedRegion)
     {
         ArtifactLoadResult<ModelInputOutputDTO> loadResult =
             await ArtifactLoader.LoadAsync<ModelInputOutputDTO>(path);
@@ -186,8 +177,7 @@
         }
 
         ModelInputOutputDTO result = loadResult.Value!;
-        if (expectedRegion is not null
-            && !string.Equals(result.Scenario.Region, expectedRegion, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(result.Scenario.Region, expectedRegion, StringComparison.OrdinalIgnoreCase))
         {
             _loadState = ArtifactLoadState.InvalidData(
                 $"Demand artifact region {result.Scenario.Region} does not match selected region {expectedRegion}.");
@@ -261,11 +251,6 @@
         _selectedRegion = _regionOptions[0];
         return true;
     }
-
-    private static bool IsLegacyFallback(ArtifactLoadState state) =>
-        state.Status == ArtifactLoadStatus.NotFound
-        || (state.Status == ArtifactLoadStatus.InvalidData
-            && state.Message?.StartsWith("Artifact schema ", StringComparison.Ordinal) == true);
 
     private static bool TryGetDataArtifactPath(string fileName, out string path)
     {
