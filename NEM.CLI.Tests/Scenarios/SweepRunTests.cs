@@ -158,6 +158,37 @@ public sealed class SweepRunTests
         error.ToString().Should().Contain("failed points: p1");
     }
 
+    /// <summary>
+    /// A malformed override can fail before a config is even generated, not just after: a keyed
+    /// array override missing its key property fails inside the JSON merge patch itself. That used
+    /// to happen in an unguarded fan-out pass before any point's dispatch even started, aborting the
+    /// whole run with no results published for any point. It must now isolate to the one point.
+    /// </summary>
+    [Fact]
+    public void Run_ContinuesAfterAnOverrideFailsToMergeIntoTheBaseline()
+    {
+        using var fixture = new SweepRunFixture();
+        fixture.WriteDefinition("""
+            [{ "pointId": "p0", "axisValue": 0, "label": "Base", "overrides": {} },
+             { "pointId": "p1", "axisValue": 1, "label": "Malformed", "overrides": { "regions": [{ "generatingFleets": [] }] } }]
+            """);
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        int exitCode = SweepRunCommand.Run(fixture.CreateContext(output, error), "sweeps/test-sweep.json");
+
+        exitCode.Should().Be(1);
+        File.Exists(fixture.PointResultPath("p0")).Should().BeTrue();
+        File.Exists(fixture.PointResultPath("p1")).Should().BeFalse();
+        Status(fixture, "p0")["status"]!.GetValue<string>().Should().Be("succeeded");
+        Status(fixture, "p1")["status"]!.GetValue<string>().Should().Be("failed");
+        JsonObject failedPoint = ReadIndex(fixture)["points"]![1]!.AsObject();
+        failedPoint["status"]!.GetValue<string>().Should().Be("failed");
+        failedPoint["failure"]!["stage"]!.GetValue<string>().Should().Be("input");
+        failedPoint["failure"]!["code"]!.GetValue<string>().Should().Be("invalidConfig");
+        error.ToString().Should().Contain("failed points: p1");
+    }
+
     [Fact]
     public void Run_ExternalizesBothSystemAndRegionalDemandToTheSameSharedSeriesFile()
     {

@@ -45,6 +45,11 @@ public sealed class SystemAndRegionDispatchResultsContractTests
         json.Should().Contain("\"toLongitude\"");
         json.Should().Contain("\"finalEnergyMwh\"");
         json.Should().Contain("\"sha256\"");
+        json.Should().Contain("\"outcome\":\"resized\"");
+        json.Should().Contain("\"energyLimitedEvidence\"");
+        json.Should().Contain("\"shortfallEnergyGwh\"");
+        json.Should().Contain("\"bindingIntervalIndices\"");
+        json.Should().Contain("\"peakUnservedIntervalIndex\"");
     }
 
     [Fact]
@@ -218,10 +223,20 @@ public sealed class SystemAndRegionDispatchResultsContractTests
             [1, 0.5]);
 
     private static DispatchMetricsDTO CreateMetrics() =>
-        new(170, 165, 35, 0, 0, 0, 1, 0, new IntervalPointersDTO(null, 0, 0));
+        new(170, 165, 35, 0, 0, 0, 1, 0, new IntervalPointersDTO(1, 0, 0));
 
     private static StorageSizingOutcomeDTO CreateSizing() =>
-        new(StorageSizingOutcome.NotRequired, 120, 30, 120, 30, 240, 60, 1);
+        new(
+            StorageSizingOutcome.Resized,
+            120,
+            30,
+            120,
+            30,
+            240,
+            60,
+            3,
+            new EnergyLimitedEvidenceDTO(10, 12, 2, [4, 7]),
+            [new StorageSizingPassDTO(1, 100, 25, 5, 2)]);
 
     private static DispatchCostDTO CreateCost() =>
         new(

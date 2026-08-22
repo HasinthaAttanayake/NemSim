@@ -131,23 +131,24 @@ dotnet run --project NEM.CLI -- --fan-out-sweep sweeps/my-sweep.json
 
 `--fan-out-sweep` applies every point's patch to the baseline, writes each resulting scenario config
 to `sweeps/<sweepId>/configs/<pointId>.json`, and validates every config it writes (via the same
-loading and validation `--run-scenario` uses). It does not run any dispatch. This is the fast
-feedback loop: while you are developing or debugging a sweep, run fan-out repeatedly and read the
-generated configs to confirm each point patches what you intended.
+loading and validation `--run-scenario` uses), stopping at the first invalid point. It does not run
+any dispatch. This is the fast feedback loop: while you are developing or debugging a sweep, run
+fan-out repeatedly and read the generated configs to confirm each point patches what you intended.
 
 ```bash
 dotnet run --project NEM.CLI -- --run-sweep sweeps/my-sweep.json
 ```
 
 `--run-sweep` fans out again internally, writing the same `sweeps/<sweepId>/configs/*.json` files,
-but **does not validate** the generated configs before running them: a bad point is recorded as a
-per-point failure so that one mistake cannot abandon a long unattended run. It then dispatches
-every point in turn. That difference between the two commands is tracked in
-[issue #116](https://github.com/HasinthaAttanayake/NemSim/issues/116).
+and validates each config the same way `--fan-out-sweep` does. The difference is what happens when
+a point is invalid: `--run-sweep` records it as that point's failure and continues on to the
+remaining points, so one malformed override cannot abandon a long unattended run, whereas
+`--fan-out-sweep` stops immediately so you get fast feedback while iterating.
 
-Because `--run-sweep` skips the validation fan-out performs on its own, run `--fan-out-sweep` first
-while you are still developing a sweep, so a malformed override surfaces as a fast validation error
-rather than partway through a full dispatch run.
+You can run `--run-sweep` directly; there is no need to fan out first to catch a malformed override,
+since `--run-sweep` validates every point itself. Running `--fan-out-sweep` first is still useful
+while you are actively developing a sweep, so you can read the generated configs before committing
+to a full dispatch run.
 
 ## What a run produces, and what happens when a point fails
 

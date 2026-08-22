@@ -20,37 +20,6 @@ internal static class ScenarioRunner
 {
     private static readonly TimeSpan HourlyResolution = TimeSpan.FromHours(1);
 
-    public static DispatchResultsDTO Run(
-        ScenarioSettings settings,
-        string solutionRoot)
-    {
-        ScenarioDispatchResult dispatch = RunDispatch(settings, solutionRoot);
-        if (dispatch.Scenario.Regions.Count != 1)
-        {
-            throw new ScenarioRunException(
-                SweepFailureStage.Export,
-                "multiRegionExportUnsupported",
-                "Dispatch results export currently supports exactly one scenario region.");
-        }
-
-        StorageSizingSettings sizing = settings.StorageSizing;
-        StorageSizingOptions sizingOptions = CreateSizingOptions(sizing);
-        string regionId = dispatch.Scenario.Regions[0].RegionId;
-        LoadedInput<OperationalDemandData> demandInput = dispatch.DemandInputs[regionId];
-        LoadedInput<WeatherDataDTO> weatherInput = dispatch.WeatherInputs[regionId];
-
-        return DispatchResultsExport.Create(new DispatchExportRequest(
-            demandInput.Value,
-            demandInput.Artifact,
-            weatherInput.Artifact,
-            WeatherBasis.Create(weatherInput.Value),
-            dispatch.Scenario,
-            dispatch.SizingResult,
-            sizingOptions,
-            sizing.ReliabilityStandardName,
-            dispatch.CostBreakdown));
-    }
-
     public static ScenarioDispatchResult RunForPublication(
         ScenarioSettings settings,
         string solutionRoot) =>

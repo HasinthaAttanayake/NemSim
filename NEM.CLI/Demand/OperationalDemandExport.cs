@@ -16,7 +16,7 @@ internal static class OperationalDemandExport
         }
 
         return new ModelInputOutputDTO(
-            2,
+            ArtifactSchemaVersions.OperationalDemand,
             new Scenario(
                 $"{demandData.Region.ToLowerInvariant()}-operational-demand",
                 demandData.Region,

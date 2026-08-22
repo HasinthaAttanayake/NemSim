@@ -1,5 +1,3 @@
-using NEM.CLI.Infrastructure;
-
 namespace NEM.CLI.Weather;
 
 internal sealed record EpwWindRun(int Length, DateTimeOffset? StartTimestamp);
@@ -104,9 +102,6 @@ internal static class EpwProvenance
             epw.Rows.Select(row => row.Year).Distinct().Order().ToArray(),
             flagsUnavailable);
     }
-
-    public static void WriteJson(EpwProvenanceReport report, string path)
-        => JsonFile.Write(report, path);
 
     private static DecodedFlag DecodeSolar(string flags, int offset, ref bool unavailable)
     {

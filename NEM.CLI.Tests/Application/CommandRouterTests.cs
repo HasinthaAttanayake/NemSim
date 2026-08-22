@@ -70,8 +70,7 @@ public sealed class CommandRouterTests
         [
             "--version", "--run-scenario", "--fan-out-sweep", "--run-sweep", "--describe-schema",
             "--validate-inputs", "--ingest", "--import-demand", "--generation-information",
-            "--epw-report", "--epw-series", "--epw-validate", "--epw-gaps", "--epw-rows",
-            "--epw-header",
+            "--epw-report",
         ];
         foreach (string command in routed)
         {
@@ -152,10 +151,10 @@ public sealed class CommandRouterTests
         using var error = new StringWriter();
         var application = new CommandRouter(fixture.Paths, fixture.RootPath, output, error);
 
-        int exitCode = application.Run(["--epw-header", "missing.epw"]);
+        int exitCode = application.Run(["--epw-report", "NSW1", "missing.epw"]);
 
         exitCode.Should().Be(1);
-        error.ToString().Should().StartWith("EPW header report failed:");
+        error.ToString().Should().StartWith("EPW report failed:");
     }
 
     [Theory]
