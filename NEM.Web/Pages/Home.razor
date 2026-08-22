@@ -11,39 +11,83 @@
 
 <div class="home-page">
     <header class="project-header">
-        <p class="eyebrow">Open National Electricity Market simulation</p>
-        <h1>NemSim</h1>
+        <p class="eyebrow">Open National Electricity Market model</p>
+        <h1>What does an 82% renewable NEM actually cost?</h1>
         <p class="lead">
-            An open model of Australia's National Electricity Market, being built in public one
-            validated layer at a time.
+            NemSim is an open, hourly dispatch simulation of Australia's National Electricity
+            Market: merit-order dispatch, coupled storage sizing and transmission cost, across all
+            five regions. Every figure below is read from a published run, and every assumption
+            behind it is written down and checked against the code.
         </p>
         <div class="project-actions">
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
-                       Href="https://github.com/users/HasinthaAttanayake/projects/11"
-                       Target="_blank"
-                       rel="noopener noreferrer"
-                       StartIcon="@Icons.Material.Filled.TrackChanges">
-                Track project
+                       Href="#case-study"
+                       StartIcon="@Icons.Material.Filled.QueryStats">
+                See the current case study
             </MudButton>
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Primary"
-                       Href="https://github.com/HasinthaAttanayake/NemSim"
+                       Href="@DocumentationLinks.Home"
                        Target="_blank"
                        rel="noopener noreferrer"
-                       StartIcon="@Icons.Material.Filled.Code">
-                View source
+                       StartIcon="@Icons.Material.Filled.MenuBook">
+                Read the documentation
             </MudButton>
         </div>
+        <p class="project-links">
+            <a href="https://github.com/users/HasinthaAttanayake/projects/11" target="_blank" rel="noopener noreferrer">Track the project</a>
+            <span aria-hidden="true">·</span>
+            <a href="https://github.com/HasinthaAttanayake/NemSim" target="_blank" rel="noopener noreferrer">View source</a>
+        </p>
     </header>
+
+    <section class="problem-section" aria-labelledby="problem-heading">
+        <div class="section-heading">
+            <div>
+                <p class="section-label">Why this exists</p>
+                <h2 id="problem-heading">Most modelling of the transition asks you to trust it</h2>
+            </div>
+        </div>
+        <div class="problem-cards">
+            <article class="problem-card">
+                <h3>A number with the assumptions stripped out</h3>
+                <p>
+                    A levelised cost or a renewable share gets published without the constants
+                    behind it, so you cannot tell whether it holds for the question you actually
+                    have.
+                </p>
+            </article>
+            <article class="problem-card">
+                <h3>One national average, five different grids</h3>
+                <p>
+                    NSW, QLD, VIC, SA and TAS carry different resource mixes, demand shapes and
+                    transmission constraints. A blended national figure hides all of it.
+                </p>
+            </article>
+            <article class="problem-card">
+                <h3>Assumptions that drift without anyone noticing</h3>
+                <p>
+                    A model's constants get tweaked for one run and the documentation never catches
+                    up, so a report can go stale silently and nobody downstream can tell.
+                </p>
+            </article>
+        </div>
+        <p class="problem-resolution">
+            NemSim answers each of these directly: dispatch is simulated per region and reported
+            per region, and every model constant is published in an
+            <a href="@DocumentationLinks.Home" target="_blank" rel="noopener noreferrer">assumptions register</a>
+            that a test suite checks against the code on every change.
+        </p>
+    </section>
 
     @if (_system is not null && _analysis is not null)
     {
-        <section class="headline-section" aria-labelledby="headline-heading">
+        <section id="case-study" class="headline-section" aria-labelledby="headline-heading">
             <div class="section-heading">
                 <div>
-                    <p class="section-label">Latest run</p>
-                    <h2 id="headline-heading">What the current simulation costs</h2>
+                    <p class="section-label">Case study &middot; latest run</p>
+                    <h2 id="headline-heading">What the current run costs</h2>
                 </div>
                 <p>@ScopeSentence</p>
             </div>
@@ -80,11 +124,11 @@
     {
         @* Loading has a spinner and every other non-success state says why. Dropping the section
            silently would leave the page looking as though the run simply has no headline. *@
-        <section class="headline-section" aria-labelledby="headline-heading">
+        <section id="case-study" class="headline-section" aria-labelledby="headline-heading">
             <div class="section-heading">
                 <div>
-                    <p class="section-label">Latest run</p>
-                    <h2 id="headline-heading">What the current simulation costs</h2>
+                    <p class="section-label">Case study &middot; latest run</p>
+                    <h2 id="headline-heading">What the current run costs</h2>
                 </div>
             </div>
             <ArtifactLoadStateView State="_systemState"><span /></ArtifactLoadStateView>
@@ -98,12 +142,12 @@
         <section class="state-section" aria-labelledby="state-heading">
             <div class="section-heading">
                 <div>
-                    <p class="section-label">Where the build is</p>
-                    <h2 id="state-heading">What the model does today</h2>
+                    <p class="section-label">How it works</p>
+                    <h2 id="state-heading">What NemSim actually simulates</h2>
                 </div>
                 <p>
-                    NemSim is built one validated layer at a time. Every line below is read from the
-                    artifacts the latest run produced, so this list is current by construction.
+                    Every line below is read from the artifacts the latest run produced, not
+                    written by hand, so it describes what ran rather than what might.
                 </p>
             </div>
 
@@ -143,6 +187,36 @@
                    rel="noopener noreferrer">expectations for developers</a>?
             </li>
         </ol>
+    </section>
+
+    <section class="docs-cta" aria-labelledby="docs-cta-heading">
+        <div class="docs-cta-copy">
+            <p class="section-label">Documentation</p>
+            <h2 id="docs-cta-heading">Every figure here traces back to a documented assumption</h2>
+            <p>
+                The guide, the concept pages behind dispatch and storage sizing, the full
+                assumptions and limitations register, and how to run your own sweeps with an LLM
+                all live on their own site &mdash; read it before you quote a number from this one.
+            </p>
+        </div>
+        <div class="docs-cta-actions">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Href="@DocumentationLinks.Home"
+                       Target="_blank"
+                       rel="noopener noreferrer"
+                       StartIcon="@Icons.Material.Filled.MenuBook">
+                Open the documentation
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       Href="@DocumentationLinks.Limitations"
+                       Target="_blank"
+                       rel="noopener noreferrer"
+                       StartIcon="@Icons.Material.Filled.Rule">
+                Assumptions and limitations
+            </MudButton>
+        </div>
     </section>
 
     @* An empty manifest legitimately means "no sweeps yet" and the section is omitted. A manifest
@@ -276,6 +350,14 @@
                 <span>
                     <strong>Solar geometry</strong>
                     <small>Hourly solar zenith for the weather location</small>
+                </span>
+                <MudIcon Icon="@Icons.Material.Filled.ArrowForward" />
+            </a>
+            <a href="@DocumentationLinks.Home" target="_blank" rel="noopener noreferrer">
+                <MudIcon Icon="@Icons.Material.Filled.SmartToy" />
+                <span>
+                    <strong>Design a sweep with an LLM</strong>
+                    <small>The published contract a model can run against, and the guardrails</small>
                 </span>
                 <MudIcon Icon="@Icons.Material.Filled.ArrowForward" />
             </a>
