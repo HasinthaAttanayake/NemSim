@@ -234,60 +234,6 @@ dotnet run --project NEM.CLI -- --epw-report NSW1 path/to/solar.epw path/to/wind
 The region argument is validated against the five NEM regions (`NSW1`, `QLD1`, `SA1`, `TAS1`,
 `VIC1`); anything else is rejected before any file is read. The EPW paths, like the
 generation-information workbook path, are used as given rather than resolved against the solution
-root. Writes `weather-{region}.json` and `weather-provenance.json` under `NEM.Web/wwwroot/data`,
-and prints the provenance report, including the daylight DNI source shares, along with a count of
-each series constructed.
+root. Writes `weather-{region}.json` under `NEM.Web/wwwroot/data`, and prints the provenance
+report, including the daylight DNI source shares, along with a count of each series constructed.
 
-## EPW diagnostics
-
-These commands inspect a single EPW file directly; none of them write anything. As with
-`--generation-information`, the file path is used as given rather than resolved against the
-solution root.
-
-### `--epw-series`
-
-```bash
-dotnet run --project NEM.CLI -- --epw-series path/to/file.epw
-```
-
-Parses the file into its resource time series and prints the length of each series (GHI, DNI, DHI,
-solar zenith, dry-bulb temperature, wind) plus the first timestamp.
-
-### `--epw-validate`
-
-```bash
-dotnet run --project NEM.CLI -- --epw-validate path/to/file.epw
-```
-
-Runs the full structural validation used by every other EPW-reading command and prints the row
-count and the distinct source years found.
-
-### `--epw-gaps`
-
-```bash
-dotnet run --project NEM.CLI -- --epw-gaps path/to/file.epw
-```
-
-Prints the row count and a gap count. **The gap count is always zero**: the EPW parser throws an
-exception the moment it encounters a gap, rather than returning one for this command to report.
-This command is retained only as an explicit, low-ceremony confirmation that a file parses end to
-end. It is not a gap detector, and retiring it is tracked in
-[issue #113](https://github.com/HasinthaAttanayake/NemSim/issues/113).
-
-### `--epw-rows`
-
-```bash
-dotnet run --project NEM.CLI -- --epw-rows path/to/file.epw
-```
-
-Prints the total row count, then the dry-bulb temperature, DNI and wind speed for the first row,
-the middle of the year (row 4,380), and the last row.
-
-### `--epw-header`
-
-```bash
-dotnet run --project NEM.CLI -- --epw-header path/to/file.epw
-```
-
-Prints the file's city, time zone, records-per-hour, whether a leap year was observed, and the
-line number the data section starts at.

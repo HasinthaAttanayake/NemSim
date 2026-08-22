@@ -534,23 +534,6 @@ internal static class DispatchResultsExport
         return minimumIndex;
     }
 
-    public static DispatchResultsDTO Create(DispatchExportRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        DispatchEvidence evidence = CreateEvidence(request);
-        return new DispatchResultsDTO(
-            ArtifactSchemaVersions.DispatchResults,
-            evidence.Scenario,
-            DateTimeOffset.UtcNow,
-            evidence.Sources,
-            evidence.PowerSystem,
-            evidence.DataSeries,
-            evidence.Metrics,
-            evidence.Reliability,
-            evidence.StorageSizing,
-            CreateLegacyCost(request, evidence.Outcome));
-    }
-
     /// <summary>Everything a dispatch-results artifact needs except cost, which depends on the caller's scope.</summary>
     private sealed record DispatchEvidence(
         DispatchScenarioDTO Scenario,
@@ -649,33 +632,6 @@ internal static class DispatchResultsExport
             CreateStorageSizingOutcome(request, regionalSizing),
             outcome);
     }
-
-    /// <summary>Cost for the single-region legacy artifact, where system and region scope coincide.</summary>
-    private static DispatchCostDTO CreateLegacyCost(DispatchExportRequest request, DispatchOutcome outcome)
-    {
-        DispatchGenerationCostContributionDTO[] costContributions = CreateGenerationCostContributions(
-            request.CostBreakdown.GenerationCostContributions,
-            outcome.DeliveredToLoad.Integrate().MegawattHours);
-        return new DispatchCostDTO(
-            "calculated",
-            costContributions.Sum(contribution => contribution.AnnualisedCostAud),
-            request.CostBreakdown.TotalAnnualisedStorageCost.Aud,
-            request.CostBreakdown.TotalAnnualisedCost.Aud,
-            request.CostBreakdown.SystemLevelisedCostOfGeneration.AudPerMwhDelivered,
-            request.CostBreakdown.SystemLevelisedCostOfStorage.AudPerMwhDelivered,
-            request.CostBreakdown.SystemLevelisedCostOfElectricity.AudPerMwhDelivered,
-            0,
-            0,
-            request.Scenario.Interconnectors.Count > 0
-                ? TransmissionCostStatus.Calculated
-                : TransmissionCostStatus.NotModelled,
-            outcome.Imports.Integrate().MegawattHours
-                - outcome.Exports.Integrate().MegawattHours,
-            costContributions);
-    }
-
-    public static void WriteJson(DispatchResultsDTO result, string path)
-        => JsonFile.Write(result, path);
 
     private static StorageSizingOutcomeDTO CreateStorageSizingOutcome(
         DispatchExportRequest request,

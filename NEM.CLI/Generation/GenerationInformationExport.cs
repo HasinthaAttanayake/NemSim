@@ -10,7 +10,7 @@ internal static class GenerationInformationExport
         IReadOnlyList<GenerationInformationRow> rows)
     {
         return new GenerationInformationDTO(
-            1,
+            ArtifactSchemaVersions.GenerationInformation,
             Path.GetFileName(sourcePath),
             DateTimeOffset.UtcNow,
             rows.ToArray());

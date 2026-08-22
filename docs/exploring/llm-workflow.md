@@ -15,8 +15,9 @@ Three properties make NemSim unusually safe to point a language model at:
   (draft 2020-12) for both input formats, generated from the same constants the validator enforces,
   so the published schema cannot drift from what the tool accepts.
 - **Validation is strict and early.** Deserialisation rejects unknown properties rather than
-  ignoring them, and `--fan-out-sweep` validates every generated config before anything runs. A
-  hallucinated field name fails loudly in seconds, not silently after an hour of dispatch.
+  ignoring them, and both `--fan-out-sweep` and `--run-sweep` validate every generated config before
+  it runs. A hallucinated field name fails loudly in seconds, not silently after an hour of
+  dispatch.
 - **The model is deterministic.** There is no run-to-run noise for a bad generation to hide in. If
   a point's numbers look wrong, they are wrong for a reason you can find.
 
@@ -135,24 +136,25 @@ the last point. If a change could be an artefact of the sizing floor
 
 ## The loop
 
-Always validate before you run. The two-step design exists for this.
+While you are iterating on a sweep definition, fan out on its own first:
 
 ```bash
 dotnet run --project NEM.CLI -- --fan-out-sweep sweeps/my-sweep.json
 ```
 
-Fan-out writes every point's materialised config **and validates each one**. A hallucinated field,
-a bad region ID or a wrong schema version all fail here, in seconds, before any dispatch happens.
-Feed the error back to the model and regenerate.
+Fan-out writes every point's materialised config **and validates each one, stopping at the first
+failure**. A hallucinated field, a bad region ID or a wrong schema version all fail here, in
+seconds, before any dispatch happens. Feed the error back to the model and regenerate.
 
-Only when fan-out is clean:
+Once fan-out is clean, or once you are past the iterate-and-regenerate stage entirely:
 
 ```bash
 dotnet run --project NEM.CLI -- --run-sweep sweeps/my-sweep.json
 ```
 
-`--run-sweep` fans out again *without* that validation and records a per-point failure instead of
-stopping, which is right for a long unattended run and wrong for iterating on a new sweep.
+`--run-sweep` fans out again and validates each point the same way, but records an invalid point as
+that point's failure and continues on rather than stopping the whole run. That is right for a long
+unattended run of many points: one bad override should not lose the results of the rest.
 
 ## Guardrails
 

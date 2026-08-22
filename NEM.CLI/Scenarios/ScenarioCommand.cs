@@ -19,12 +19,6 @@ internal static class ScenarioCommand
         return RunPublication(context, path);
     }
 
-    public static int Run(CliContext context, string scenarioConfigPath, string resultsPath)
-    {
-        string path = context.Paths.ResolveConfiguredPath(scenarioConfigPath);
-        return Run(context, LoadScenario(path), resultsPath);
-    }
-
     public static int Run(
         CliContext context,
         string scenarioConfigPath,
@@ -51,18 +45,6 @@ internal static class ScenarioCommand
                 exception.Message,
                 exception);
         }
-    }
-
-    private static int Run(CliContext context, ScenarioSettings settings, string resultsPath)
-    {
-        DispatchResultsDTO result = ScenarioRunner.Run(settings, context.Paths.SolutionRoot);
-        WriteResults(result, resultsPath);
-        context.Output.WriteLine(
-            $"Dispatched {result.DataSeries.Demand.TotalDemandMw.Length} hourly intervals for "
-            + $"{result.Scenario.Region}.");
-        context.Output.WriteLine(
-            $"Wrote scenario results to: {Path.GetFullPath(resultsPath)}");
-        return 0;
     }
 
     private static int RunPublication(CliContext context, string scenarioConfigPath)
@@ -157,20 +139,4 @@ internal static class ScenarioCommand
         }
     }
 
-    /// <summary>Writes the results artifact, attributing any failure to the export stage.</summary>
-    private static void WriteResults(DispatchResultsDTO result, string resultsPath)
-    {
-        try
-        {
-            DispatchResultsExport.WriteJson(result, resultsPath);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            throw new ScenarioRunException(
-                SweepFailureStage.Export,
-                "resultsUnwritable",
-                exception.Message,
-                exception);
-        }
-    }
 }

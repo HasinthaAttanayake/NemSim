@@ -66,11 +66,6 @@ internal sealed class CommandRouter
                     EpwCommands.WriteReport(_context, RequireKnownRegion(regionId), solarPath),
                 ["--epw-report", var regionId, var solarPath, var windPath] =>
                     EpwCommands.WriteReport(_context, RequireKnownRegion(regionId), solarPath, windPath),
-                ["--epw-series", var path] => EpwCommands.PrintSeries(_context, path),
-                ["--epw-validate", var path] => EpwCommands.Validate(_context, path),
-                ["--epw-gaps", var path] => EpwCommands.PrintGaps(_context, path),
-                ["--epw-rows", var path] => EpwCommands.PrintRows(_context, path),
-                ["--epw-header", var path] => EpwCommands.PrintHeader(_context, path),
                 _ => PrintUsage(_error, 2),
             };
         }
@@ -124,13 +119,6 @@ internal sealed class CommandRouter
         writer.WriteLine("  NEM.CLI --import-demand [output-directory]");
         writer.WriteLine("  NEM.CLI --generation-information <workbook.xlsx>");
         writer.WriteLine("  NEM.CLI --epw-report <region> <solar.epw> [wind.epw]");
-        writer.WriteLine();
-        writer.WriteLine("  EPW diagnostics:");
-        writer.WriteLine("  NEM.CLI --epw-series <file.epw>");
-        writer.WriteLine("  NEM.CLI --epw-validate <file.epw>");
-        writer.WriteLine("  NEM.CLI --epw-gaps <file.epw>");
-        writer.WriteLine("  NEM.CLI --epw-rows <file.epw>");
-        writer.WriteLine("  NEM.CLI --epw-header <file.epw>");
         return exitCode;
     }
 
@@ -145,11 +133,6 @@ internal sealed class CommandRouter
         "--import-demand" => "Operational-demand import",
         "--generation-information" => "Generation-information import",
         "--epw-report" => "EPW report",
-        "--epw-series" => "EPW series",
-        "--epw-validate" => "EPW validation",
-        "--epw-gaps" => "EPW gap analysis",
-        "--epw-rows" => "EPW row report",
-        "--epw-header" => "EPW header report",
         _ => "Command",
     };
 }
